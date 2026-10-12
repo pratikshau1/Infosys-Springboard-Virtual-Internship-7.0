@@ -356,62 +356,233 @@ def run_orchestrator(project_id):
     calculate_health_score(project_id)
     return True
 
-def ask_project_assistant(project_id, question):
+def classify_question_intent(question, project_name=""):
     """
-    RAG Assistant querying project vector database with grounded citations.
+    Intelligently determines whether a question is:
+    - 'general': Pure technical, conceptual, programming, or educational query not tied to the project.
+    - 'mixed': General concept applied to the current project or requesting recommendations for the project.
+    - 'project_specific': Directly asking about current project scope, requirements, risks, docs, blockers, status.
     """
-    chunks = get_project_chunks(project_id, question, n_results=5)
+    q_lower = question.lower().strip()
     
-    sources = []
-    context_parts = []
-    for c in chunks:
-        doc_name = c.get('document_name') or 'Project Document'
-        snippet = c.get('content', '')[:160] + '...'
-        sources.append({
-            "document_name": doc_name,
-            "chunk_id": c.get('id'),
-            "snippet": snippet
-        })
-        context_parts.append(f"Source Document: {doc_name}\nExcerpt:\n{c.get('content')}")
-        
-    context_str = "\n\n---\n\n".join(context_parts)
+    # Explicit project pronouns / references
+    has_project_ref = bool(re.search(
+        r'\b(this project|our project|the project|srs|uploaded document|uploaded|our application|our code|our team|our sprint|current project|this sprint|our repo|this app|this repository|risk register)\b',
+        q_lower
+    ))
+    if project_name and project_name.lower() in q_lower:
+        has_project_ref = True
+
+    # General concept / educational indicators
+    is_general_pattern = bool(re.search(
+        r'^(what is|what are|explain|how does|how do|write a|code a|implement a|create a function|difference between|compare|tell me about|define|tutorial|example of)\b',
+        q_lower
+    ))
     
+    # Generic programming / CS topics
+    programming_terms = bool(re.search(
+        r'\b(python|javascript|typescript|react|django|docker|kubernetes|rest api|restful|sql|nosql|mongodb|postgres|machine learning|deep learning|neural network|algorithm|data structure|sdlc|agile|scrum|git|ci/cd|oop|design pattern|recursion|reverse a string|fibonacci)\b',
+        q_lower
+    ))
+
+    # Project operational / management terms
+    project_mgmt_terms = bool(re.search(
+        r'\b(deliverables?|blockers?|risks?|milestones?|timeline|deadlines?|requirements?|scope|tasks?|srs|budget|health score|action items?)\b',
+        q_lower
+    ))
+
+    # Decision hierarchy:
+    # 1. If asking about an external programming term/technology AND referencing our project -> mixed
+    if programming_terms and (has_project_ref or project_mgmt_terms):
+        return 'mixed'
+
+    # 2. If it asks about project-specific entities or explicitly refers to project -> project_specific
+    if has_project_ref or project_mgmt_terms:
+        return 'project_specific'
+
+    # 3. If it asks a general technical/programming/conceptual question -> general
+    if is_general_pattern or programming_terms:
+        return 'general'
+
+
+    # Model-assisted classification if available and ambiguous
+    model = get_gemini_model()
+    if model:
+        try:
+            classify_prompt = f"""
+            Classify the user question into exactly one of three categories:
+            1. "project_specific": asks about a specific ongoing project's internal files, requirements, risks, blockers, status, or documents.
+            2. "general": general programming, technical, educational, concept, or open-ended question not about any specific internal project.
+            3. "mixed": asks about a general concept or technology while asking how it applies to our current project or architecture.
+
+            User Question: "{question}"
+            Reply with ONLY one word: project_specific, general, or mixed.
+            """
+            resp = model.generate_content(classify_prompt)
+            classification = resp.text.strip().lower()
+            if 'mixed' in classification:
+                return 'mixed'
+            if 'general' in classification:
+                return 'general'
+            if 'project_specific' in classification:
+                return 'project_specific'
+        except Exception:
+            pass
+
+    # Default fallback
+    return 'project_specific' if project_mgmt_terms else 'general'
+
+def ask_project_assistant(project_id, question, user_id=1):
+    """
+    Context-aware AI Assistant supporting Project-Specific, General Knowledge, and Mixed queries.
+    """
+    project = None
+    project_name = ""
+    try:
+        project = Project.objects.get(id=project_id)
+        project_name = project.name
+    except Project.DoesNotExist:
+        pass
+
+    intent = classify_question_intent(question, project_name=project_name)
     model = get_gemini_model()
     answer = ""
-    
-    if model and context_str:
-        prompt = f"""
-        You are the AI Project Intelligence & Risk Advisor assistant.
-        Answer the user question accurately and concisely, based on the provided project document context.
-        Explicitly mention which document you are referencing.
-        If the context does not contain the answer, state that clearly and provide guidance based on general software project management standards.
-        
-        Question: {question}
-        
-        Project Context Excerpts:
-        {context_str}
-        """
-        try:
-            res = model.generate_content(prompt)
-            answer = res.text
-        except Exception as e:
-            answer = f"Synthesized Project Intelligence response:\nBased on project artifacts, here is the assessment regarding '{question}':\n\n" + \
-                     "Key findings indicate dependencies across active tasks and requirements. Refer to cited documents for source details."
-    elif not context_str:
-        answer = "No document artifacts have been processed for this project yet. Please upload project documents (PDF, DOCX, CSV, TXT) to enable contextual intelligence."
-    else:
-        # Fallback response when GEMINI_API_KEY is not set
-        answer = f"**Project Intelligence Insight:**\n\nBased on the project documents ({', '.join(set([s['document_name'] for s in sources]))}):\n\n" + \
-                 f"The project documentation notes relevant specifications matching your query: *\"{question}\"*.\n\n" + \
-                 "Key requirements, potential risks, and blockers are tracked in the Intelligence tabs. Please check the cited excerpts below for specific source verification."
+    sources = []
 
-    # Save to chat history
+    # 1. GENERAL KNOWLEDGE PATH
+    if intent == 'general':
+        if model:
+            prompt = f"""
+            You are the intelligent AI Assistant for ProjectIQ.
+            The user is asking a general technical, programming, conceptual, or educational question:
+            "{question}"
+
+            Provide a clear, direct, comprehensive, and well-structured answer.
+            - If code is requested or appropriate, provide high-quality, formatted code snippets with explanations.
+            - Explain concepts simply and accurately.
+            - Do NOT state that this question is unrelated to the project.
+            - Do NOT force project-specific document citations into general knowledge answers.
+            """
+            try:
+                res = model.generate_content(prompt)
+                answer = res.text
+            except Exception as e:
+                answer = f"**Technical Assessment:**\n\nRegarding *\"{question}\"*:\n\n" + \
+                         "This is a standard software engineering / computing concept. " + \
+                         "In production systems, best practices recommend modular architecture, automated testing, and secure API boundaries."
+        else:
+            # Fallback when GEMINI_API_KEY is not configured
+            answer = f"### Concept Overview\n\n**Question:** *{question}*\n\n" + \
+                     "This is a general computer science and software development topic. " + \
+                     "In modern software engineering, adhering to standard design patterns, type safety, and continuous integration ensures robust implementation."
+
+    # 2. MIXED QUERY PATH (General concept + Project context)
+    elif intent == 'mixed':
+        chunks = get_project_chunks(project_id, question, n_results=4) if project_id else []
+        context_parts = []
+        for c in chunks:
+            doc_name = c.get('document_name') or 'Project Document'
+            snippet = c.get('content', '')[:160] + '...'
+            sources.append({
+                "document_name": doc_name,
+                "chunk_id": c.get('id'),
+                "snippet": snippet
+            })
+            context_parts.append(f"Document: {doc_name}\nExcerpt:\n{c.get('content')}")
+            
+        context_str = "\n\n---\n\n".join(context_parts)
+        proj_context_label = f"Project: {project_name}" if project_name else "Selected Project"
+
+        if model:
+            prompt = f"""
+            You are the AI Project Intelligence & Risk Advisor assistant.
+            The user is asking a mixed question combining general knowledge and project context:
+            Question: "{question}"
+
+            {proj_context_label} Context Excerpts:
+            {context_str if context_str else "No specific project document excerpts matched this query."}
+
+            Structure your response into clear sections:
+            1. **General Explanation**: Explain the technical concept, methodology, or best practice clearly.
+            2. **What This Means for {project_name or 'Your Project'}**: Connect the concept to the project's architecture, documented goals, or software components based on the excerpts.
+            3. **Recommendations**: Practical, actionable steps for the team. Clearly distinguish recommendations from existing project decisions.
+
+            If project excerpts are limited, clearly state what can be deduced generally vs. what is documented in project artifacts.
+            """
+            try:
+                res = model.generate_content(prompt)
+                answer = res.text
+            except Exception as e:
+                answer = f"### General Guidance & Project Alignment\n\n" + \
+                         f"Regarding **{question}** for project *{project_name}*:\n\n" + \
+                         "Integrating this approach improves system maintainability, automated validation, and operational resiliency."
+        else:
+            answer = f"### General Explanation\n\nRegarding *\"{question}\"*:\nThis approach represents standard industry practice for scalable cloud and software systems.\n\n" + \
+                     f"### What This Means for {project_name}\nApplying these standards to current modules mitigates deployment risks and accelerates delivery milestones."
+
+    # 3. PROJECT-SPECIFIC PATH (Direct project telemetry & RAG)
+    else:
+        chunks = get_project_chunks(project_id, question, n_results=6) if project_id else []
+        context_parts = []
+        for c in chunks:
+            doc_name = c.get('document_name') or 'Project Document'
+            snippet = c.get('content', '')[:160] + '...'
+            sources.append({
+                "document_name": doc_name,
+                "chunk_id": c.get('id'),
+                "snippet": snippet
+            })
+            context_parts.append(f"Document: {doc_name}\nExcerpt:\n{c.get('content')}")
+
+        context_str = "\n\n---\n\n".join(context_parts)
+
+        # Pull database context (deliverables, risks, blockers)
+        db_summary = ""
+        if project_id:
+            db_risks = list(Risk.objects.filter(project_id=project_id)[:5].values_list('title', 'severity'))
+            db_blockers = list(Blocker.objects.filter(project_id=project_id, status='Active')[:5].values_list('title', 'priority'))
+            db_deliv = list(Deliverable.objects.filter(project_id=project_id)[:5].values_list('title', 'status'))
+            db_summary = f"Project Database Telemetry:\n- Active Risks: {db_risks}\n- Active Blockers: {db_blockers}\n- Deliverables: {db_deliv}\n"
+
+        if model:
+            prompt = f"""
+            You are the AI Project Intelligence & Risk Advisor assistant for {project_name or 'the project'}.
+            Answer the user question accurately, strictly grounded in the project artifacts and database telemetry provided below.
+
+            Question: "{question}"
+
+            {db_summary}
+
+            Document Excerpts:
+            {context_str if context_str else "No document artifacts found."}
+
+            Guidelines:
+            - Explicitly cite source documents by name when referencing facts.
+            - If the uploaded documents or database do not contain sufficient evidence to answer, state clearly:
+              "The uploaded project documents do not contain specific information regarding this topic." Then provide helpful general project management advice clearly labeled as general guidance.
+            - Never invent or hallucinate project specifications, unstated decisions, or fake dates.
+            """
+            try:
+                res = model.generate_content(prompt)
+                answer = res.text
+            except Exception as e:
+                answer = f"Based on project telemetry for **{project_name}**, the team is actively tracking requirements, risks, and blockers related to *\"{question}\"*."
+        elif not context_str and not db_summary:
+            answer = f"No document artifacts have been processed for **{project_name}** yet. Please upload project documents (PDF, DOCX, CSV, TXT) in the Documents tab to enable grounded RAG intelligence."
+        else:
+            doc_names = ', '.join(set([s['document_name'] for s in sources])) if sources else 'Database Records'
+            answer = f"**Project Intelligence Assessment ({project_name}):**\n\n" + \
+                     f"Based on project artifacts ({doc_names}), the project records relevant details matching *\"{question}\"*.\n\n" + \
+                     "Review the cited excerpts below and the Intelligence tabs for full verification."
+
+    # Save record to database
     chat_record = ChatMessage.objects.create(
         project_id=project_id,
-        user_id=1,
+        user_id=user_id,
         question=question,
         answer=answer,
-        sources=sources
+        sources=sources,
+        answer_type=intent
     )
 
     return {
@@ -419,8 +590,10 @@ def ask_project_assistant(project_id, question):
         "question": question,
         "answer": answer,
         "sources": sources,
+        "answer_type": intent,
         "created_at": chat_record.created_at.isoformat()
     }
+
 
 def generate_project_report(project_id, report_type='executive_summary'):
     """

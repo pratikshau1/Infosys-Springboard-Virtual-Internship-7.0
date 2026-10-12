@@ -227,8 +227,10 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
             
-        result = ask_project_assistant(project_id, question)
+        user_id = request.user.id if request.user and request.user.is_authenticated else 1
+        result = ask_project_assistant(project_id, question, user_id=user_id)
         return Response(result, status=status.HTTP_201_CREATED)
+
 
 class ForecastView(APIView):
     def get(self, request):

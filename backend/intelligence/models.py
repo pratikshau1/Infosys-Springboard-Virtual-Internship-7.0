@@ -64,4 +64,6 @@ class ChatMessage(models.Model):
     question = models.TextField()
     answer = models.TextField()
     sources = models.JSONField(default=list)
+    answer_type = models.CharField(max_length=50, default='project_specific', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+

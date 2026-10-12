@@ -139,9 +139,29 @@ const AssistantView = ({ projectId = 1 }) => {
                   <AssistantIcon className="w-4 h-4" />
                 </div>
                 <div className="space-y-3">
-                  <div className="bg-gray-950 border border-gray-800 rounded-2xl rounded-tl-sm p-5 text-sm text-gray-200 leading-relaxed whitespace-pre-wrap">
+                  {/* Subtle answer-type badge */}
+                  {msg.answer_type && (
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border ${
+                        msg.answer_type === 'general'
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                          : msg.answer_type === 'mixed'
+                          ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+                          : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
+                      }`}>
+                        {msg.answer_type === 'general' 
+                          ? 'General Answer' 
+                          : msg.answer_type === 'mixed'
+                          ? 'Project + General Guidance'
+                          : 'Project Insight'}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="bg-gray-950 border border-gray-800 rounded-2xl rounded-tl-sm p-5 text-sm text-gray-200 leading-relaxed whitespace-pre-wrap font-sans">
                     {msg.answer}
                   </div>
+
 
                   {/* Sources citation buttons */}
                   {msg.sources && msg.sources.length > 0 && (
@@ -193,9 +213,10 @@ const AssistantView = ({ projectId = 1 }) => {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask a question about project architecture, risks, or timeline..."
+            placeholder="Ask anything: project risks, architecture, or general programming/tech concepts..."
             className="flex-1 bg-gray-900 border border-gray-800 rounded-2xl px-5 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors"
           />
+
           <button
             type="submit"
             disabled={loading || !input.trim()}
