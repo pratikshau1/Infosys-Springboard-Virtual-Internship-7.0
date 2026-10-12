@@ -51,12 +51,12 @@ const Sidebar = ({ currentProjectId, onSelectProject }) => {
   }
   
   const navItems = [
-    { name: 'Dashboard', path: '/', icon: DashboardIcon },
-    { name: 'Documents', path: '/documents', icon: DocumentIcon },
-    { name: 'Scope', path: '/scope', icon: ScopeIcon },
-    { name: 'Risks', path: '/risks', icon: RiskIcon },
-    { name: 'Blockers', path: '/blockers', icon: BlockerIcon },
-    { name: 'AI Assistant', path: '/assistant', icon: AssistantIcon },
+    { name: 'Dashboard', path: '/app', icon: DashboardIcon },
+    { name: 'Documents', path: '/app/documents', icon: DocumentIcon },
+    { name: 'Scope', path: '/app/scope', icon: ScopeIcon },
+    { name: 'Risks', path: '/app/risks', icon: RiskIcon },
+    { name: 'Blockers', path: '/app/blockers', icon: BlockerIcon },
+    { name: 'AI Assistant', path: '/app/assistant', icon: AssistantIcon },
   ]
 
   return (
@@ -117,18 +117,26 @@ const Sidebar = ({ currentProjectId, onSelectProject }) => {
           })}
         </nav>
 
-        <div className="p-5 border-t border-gray-800/50">
-          <div className="flex items-center gap-3">
+        <div className="p-4 border-t border-gray-800/50 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 p-[1.5px]">
-              <div className="w-full h-full bg-gray-900 rounded-full flex items-center justify-center text-xs font-bold">
-                US
+              <div className="w-full h-full bg-gray-900 rounded-full flex items-center justify-center text-xs font-bold text-white">
+                PR
               </div>
             </div>
             <div>
               <p className="text-xs font-medium text-white">Pratiksha</p>
-              <p className="text-[10px] text-gray-500">Project Manager</p>
+              <p className="text-[10px] text-gray-500">Project Lead</p>
             </div>
           </div>
+
+          <Link
+            to="/"
+            title="Sign Out / Landing"
+            className="text-[11px] text-gray-400 hover:text-white px-2 py-1 rounded-lg hover:bg-gray-800 transition-colors"
+          >
+            Exit
+          </Link>
         </div>
       </aside>
 

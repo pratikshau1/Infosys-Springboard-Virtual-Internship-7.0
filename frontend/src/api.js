@@ -7,6 +7,10 @@ const api = axios.create({
   timeout: 30000,
 })
 
+export const registerUser = (data) => api.post('/projects/auth/register/', data)
+export const loginUser = (data) => api.post('/projects/auth/login/', data)
+export const getCurrentUser = () => api.get('/projects/auth/me/')
+
 export const getProjects = () => api.get('/projects/')
 export const getProject = (id) => api.get(`/projects/${id}/`)
 export const createProject = (data) => api.post('/projects/', data)
