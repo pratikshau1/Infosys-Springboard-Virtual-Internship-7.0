@@ -10,7 +10,12 @@ from django.contrib.auth.models import User
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_permissions(self):
+        # Allow viewing projects (especially demo projects) if unauthenticated
+        if self.action in ['list']:
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
     
     def get_queryset(self):
         user = self.request.user
@@ -24,6 +29,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 models.Q(id__in=active_pids) | 
                 models.Q(is_demo=True)
             ).distinct()
+        elif not user or not user.is_authenticated:
+            # Unauthenticated users can view demo projects
+            queryset = queryset.filter(is_demo=True)
+
 
         # Search by project name
 

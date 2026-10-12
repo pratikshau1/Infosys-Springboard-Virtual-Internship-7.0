@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { getProjects, createProject, getCurrentUser } from '../api'
 import { 
   DashboardIcon, DocumentIcon, ScopeIcon, 
-  RiskIcon, BlockerIcon, AssistantIcon, CrossIcon, CheckIcon
+  RiskIcon, BlockerIcon, AssistantIcon, CrossIcon, CheckIcon, UsersIcon
 } from './Icons'
 import ProjectModal from './ProjectModal'
+
 
 const Sidebar = ({ currentProjectId, onSelectProject }) => {
   const location = useLocation()
