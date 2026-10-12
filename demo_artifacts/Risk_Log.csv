@@ -1,0 +1,5 @@
+Risk_ID,Title,Category,Severity,Probability,Impact,Mitigation_Strategy
+RSK-01,Subterranean GPS attenuation,Technical,Critical,High,High,Deploy BLE beacon triangulation inside underground garage bays
+RSK-02,SMS OTP gateway rate throttling,Operational,Moderate,Medium,Moderate,Configure secondary failover SMS provider and push notification fallback
+RSK-03,Fleet device fragmentation on leased shuttles,Technical,Low,Medium,Low,Standardize Android camera QR scanner hardware specifications
+RSK-04,Schedule slip due to database schema migration,Schedule,Moderate,High,Medium,Execute automated CI migration regression suite in staging

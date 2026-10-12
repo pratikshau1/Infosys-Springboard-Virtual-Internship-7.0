@@ -9,6 +9,7 @@ const api = axios.create({
 
 export const getProjects = () => api.get('/projects/')
 export const getProject = (id) => api.get(`/projects/${id}/`)
+export const createProject = (data) => api.post('/projects/', data)
 
 export const getHealthScore = (projectId) => 
   api.get(`/intelligence/health/?project_id=${projectId}`)

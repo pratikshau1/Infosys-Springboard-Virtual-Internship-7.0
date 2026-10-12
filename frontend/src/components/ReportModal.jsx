@@ -30,6 +30,17 @@ const ReportModal = ({ isOpen, onClose, projectId }) => {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const handleDownload = () => {
+    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `${reportType}_project_${projectId || 1}.md`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-200">
       <div className="bg-gray-900 border border-gray-800 rounded-3xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
@@ -106,22 +117,31 @@ const ReportModal = ({ isOpen, onClose, projectId }) => {
             <div className="space-y-3">
               <div className="flex justify-between items-center text-xs text-gray-400">
                 <span>Markdown Output</span>
-                <button
-                  onClick={handleCopy}
-                  className="bg-gray-800 hover:bg-gray-700 text-white px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 text-xs"
-                >
-                  {copied ? (
-                    <>
-                      <CheckIcon className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Copied</span>
-                    </>
-                  ) : (
-                    <>
-                      <DocumentIcon className="w-3.5 h-3.5" />
-                      <span>Copy Markdown</span>
-                    </>
-                  )}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleDownload}
+                    className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-semibold shadow-md active:scale-95"
+                  >
+                    <DocumentIcon className="w-3.5 h-3.5" />
+                    <span>Download .md</span>
+                  </button>
+                  <button
+                    onClick={handleCopy}
+                    className="bg-gray-800 hover:bg-gray-700 text-white px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 text-xs"
+                  >
+                    {copied ? (
+                      <>
+                        <CheckIcon className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <DocumentIcon className="w-3.5 h-3.5" />
+                        <span>Copy Markdown</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
               <div className="bg-gray-950 border border-gray-800 rounded-2xl p-6 font-mono text-xs text-gray-200 overflow-x-auto whitespace-pre-wrap max-h-96 leading-relaxed">
                 {content}

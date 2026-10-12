@@ -16,7 +16,7 @@ function App() {
   return (
     <Router>
       <div className="flex h-screen bg-gray-950 text-white font-sans selection:bg-indigo-500 selection:text-white">
-        <Sidebar />
+        <Sidebar currentProjectId={activeProjectId} onSelectProject={setActiveProjectId} />
         <main className="flex-1 overflow-y-auto overflow-x-hidden relative">
           {/* Subtle background ambient gradients */}
           <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-indigo-900/20 via-purple-900/10 to-transparent -z-10 pointer-events-none"></div>

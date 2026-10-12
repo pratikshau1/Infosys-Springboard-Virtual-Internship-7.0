@@ -1,0 +1,12 @@
+# Sprint 4 Review & Impediments Log
+Date: October 12, 2026
+Attendees: Sarah Chen, Marcus Vance, Alex Rivera
+
+## 1. Active Impediments & Blockers
+- Blocker 1: Database read-replica synchronization lag exceeds 2.4s during peak coordinate bursts. (Owner: Sarah Chen, Priority: High)
+- Blocker 2: Transit authority SSL wildcard certificate awaiting campus IT network security signoff. (Owner: Marcus Vance, Priority: Medium)
+
+## 2. Sprint Action Items
+- Benchmark TimescaleDB vs Postgres telemetry ingestion throughput (Owner: Sarah Chen, Due: 3 days)
+- Provision secondary Firebase Cloud Messaging failover pool (Owner: Alex Rivera, Due: 7 days)
+- Run physical drive test on Route 4 Campus Shuttle (Owner: Dev Team, Due: 10 days)

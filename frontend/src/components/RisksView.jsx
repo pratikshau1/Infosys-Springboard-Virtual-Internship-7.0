@@ -42,6 +42,29 @@ const RisksView = ({ projectId = 1 }) => {
   const moderateCount = risks.filter(r => r.severity?.toLowerCase() === 'moderate').length
   const lowCount = risks.filter(r => r.severity?.toLowerCase() === 'low').length
 
+  const handleExportCSV = () => {
+    if (!risks.length) return
+    const headers = ["ID", "Title", "Category", "Severity", "Probability", "Impact", "Status", "Mitigation"]
+    const rows = risks.map(r => [
+      r.id,
+      `"${(r.title || '').replace(/"/g, '""')}"`,
+      r.category,
+      r.severity,
+      r.probability,
+      r.impact,
+      r.status,
+      `"${(r.mitigation || '').replace(/"/g, '""')}"`
+    ])
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join('\n')
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement("a")
+    link.setAttribute("href", encodedUri)
+    link.setAttribute("download", `risks_project_${projectId || 1}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   return (
     <div className="space-y-6 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -50,39 +73,48 @@ const RisksView = ({ projectId = 1 }) => {
           <p className="text-gray-400 text-sm">Automated severity scoring, exposure analysis, and mitigation plans</p>
         </div>
 
-        {/* Severity Summary Pills */}
-        <div className="flex gap-2">
+        {/* Severity Summary Pills & Export */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex gap-1.5 bg-gray-950 p-1 rounded-xl border border-gray-800">
+            <button
+              onClick={() => setFilterSeverity('All')}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                filterSeverity === 'All' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              All ({risks.length})
+            </button>
+            <button
+              onClick={() => setFilterSeverity('Critical')}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                filterSeverity === 'Critical' ? 'bg-red-600 text-white' : 'text-red-400 hover:bg-red-950/40'
+              }`}
+            >
+              Critical ({criticalCount})
+            </button>
+            <button
+              onClick={() => setFilterSeverity('Moderate')}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                filterSeverity === 'Moderate' ? 'bg-amber-600 text-white' : 'text-amber-400 hover:bg-amber-950/40'
+              }`}
+            >
+              Moderate ({moderateCount})
+            </button>
+            <button
+              onClick={() => setFilterSeverity('Low')}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                filterSeverity === 'Low' ? 'bg-emerald-600 text-white' : 'text-emerald-400 hover:bg-emerald-950/40'
+              }`}
+            >
+              Low ({lowCount})
+            </button>
+          </div>
+
           <button
-            onClick={() => setFilterSeverity('All')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-              filterSeverity === 'All' ? 'bg-indigo-600 text-white' : 'bg-gray-900 text-gray-400 hover:text-white'
-            }`}
+            onClick={handleExportCSV}
+            className="bg-gray-800 hover:bg-gray-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all border border-gray-700 flex items-center gap-1.5 active:scale-95 shadow-sm"
           >
-            All ({risks.length})
-          </button>
-          <button
-            onClick={() => setFilterSeverity('Critical')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-              filterSeverity === 'Critical' ? 'bg-red-600 text-white' : 'bg-gray-900 text-red-400 hover:bg-red-950/40'
-            }`}
-          >
-            Critical ({criticalCount})
-          </button>
-          <button
-            onClick={() => setFilterSeverity('Moderate')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-              filterSeverity === 'Moderate' ? 'bg-amber-600 text-white' : 'bg-gray-900 text-amber-400 hover:bg-amber-950/40'
-            }`}
-          >
-            Moderate ({moderateCount})
-          </button>
-          <button
-            onClick={() => setFilterSeverity('Low')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-              filterSeverity === 'Low' ? 'bg-emerald-600 text-white' : 'bg-gray-900 text-emerald-400 hover:bg-emerald-950/40'
-            }`}
-          >
-            Low ({lowCount})
+            <span>Export CSV</span>
           </button>
         </div>
       </header>
