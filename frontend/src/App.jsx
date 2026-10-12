@@ -9,9 +9,9 @@ import BlockersView from './components/BlockersView'
 import AssistantView from './components/AssistantView'
 import LandingPage from './components/LandingPage'
 import LoginPage from './components/LoginPage'
-import RegisterPage from './components/RegisterPage'
 import ProjectsView from './components/ProjectsView'
 import UsersManagementView from './components/UsersManagementView'
+import SettingsView from './components/SettingsView'
 import { SearchIcon } from './components/Icons'
 
 function AppLayout({ activeProjectId, setActiveProjectId }) {
@@ -28,6 +28,7 @@ function AppLayout({ activeProjectId, setActiveProjectId }) {
             <Route path="/" element={<Dashboard projectId={activeProjectId} />} />
             <Route path="/projects" element={<ProjectsView onSelectProject={setActiveProjectId} />} />
             <Route path="/users" element={<UsersManagementView />} />
+            <Route path="/settings" element={<SettingsView projectId={activeProjectId} />} />
             <Route path="/documents" element={<DocumentsView projectId={activeProjectId} />} />
             <Route path="/scope" element={<ScopeView projectId={activeProjectId} />} />
             <Route path="/risks" element={<RisksView projectId={activeProjectId} />} />
@@ -46,6 +47,7 @@ function AppLayout({ activeProjectId, setActiveProjectId }) {
     </div>
   )
 }
+
 
 function App() {
   const [activeProjectId, setActiveProjectId] = useState(1)
@@ -73,12 +75,14 @@ function App() {
         <Route path="/projects" element={<Navigate to="/app/projects" replace />} />
 
         {/* Direct shortcuts */}
+        <Route path="/settings" element={<Navigate to="/app/settings" replace />} />
         <Route path="/dashboard" element={<Navigate to="/app" replace />} />
         <Route path="/documents" element={<Navigate to="/app/documents" replace />} />
         <Route path="/scope" element={<Navigate to="/app/scope" replace />} />
         <Route path="/risks" element={<Navigate to="/app/risks" replace />} />
         <Route path="/blockers" element={<Navigate to="/app/blockers" replace />} />
         <Route path="/assistant" element={<Navigate to="/app/assistant" replace />} />
+
 
         {/* 404 Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />

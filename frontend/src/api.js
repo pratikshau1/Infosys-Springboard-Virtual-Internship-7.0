@@ -19,6 +19,8 @@ api.interceptors.request.use((config) => {
 export const registerUser = (data) => api.post('/projects/auth/register/', data)
 export const loginUser = (data) => api.post('/projects/auth/login/', data)
 export const getCurrentUser = () => api.get('/projects/auth/me/')
+export const updateCurrentUser = (data) => api.patch('/projects/auth/me/', data)
+
 
 export const getProjects = (params) => api.get('/projects/', { params })
 export const getProject = (id) => api.get(`/projects/${id}/`)

@@ -488,3 +488,35 @@ class CurrentUserView(APIView):
             return Response(data)
         return Response({"error": "No user found"}, status=status.HTTP_404_NOT_FOUND)
 
+    def patch(self, request):
+        user = request.user if request.user.is_authenticated else User.objects.first()
+        if not user:
+            return Response({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        first_name = request.data.get('first_name')
+        last_name = request.data.get('last_name')
+        email = request.data.get('email')
+        new_password = request.data.get('password')
+
+        if first_name is not None:
+            user.first_name = first_name
+        if last_name is not None:
+            user.last_name = last_name
+        if email:
+            user.email = email
+        if new_password:
+            user.set_password(new_password)
+        
+        user.save()
+        AuditLog.objects.create(
+            actor=user,
+            action="PROFILE_UPDATED",
+            target_resource=f"User {user.username}",
+            metadata={"email": user.email}
+        )
+        data = UserSerializer(user).data
+        data['is_staff'] = user.is_staff
+        data['is_superuser'] = user.is_superuser
+        return Response(data, status=status.HTTP_200_OK)
+
+

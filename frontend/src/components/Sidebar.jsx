@@ -3,9 +3,10 @@ import { Link, useLocation } from 'react-router-dom'
 import { getProjects, createProject, getCurrentUser } from '../api'
 import { 
   DashboardIcon, DocumentIcon, ScopeIcon, 
-  RiskIcon, BlockerIcon, AssistantIcon, CrossIcon, CheckIcon, UsersIcon
+  RiskIcon, BlockerIcon, AssistantIcon, CrossIcon, CheckIcon, UsersIcon, SettingsIcon
 } from './Icons'
 import ProjectModal from './ProjectModal'
+
 
 
 const Sidebar = ({ currentProjectId, onSelectProject }) => {
@@ -97,7 +98,7 @@ const Sidebar = ({ currentProjectId, onSelectProject }) => {
           </div>
         </div>
         
-        <nav className="flex-1 px-4 space-y-1.5 mt-1">
+        <nav className="flex-1 px-4 space-y-1.5 mt-1 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path
             const Icon = item.icon
@@ -107,18 +108,34 @@ const Sidebar = ({ currentProjectId, onSelectProject }) => {
                 to={item.path}
                 className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group ${
                   isActive 
-                    ? 'bg-indigo-600/10 text-indigo-400 shadow-[inset_0_0_20px_rgba(99,102,241,0.1)]' 
+                    ? 'bg-indigo-600/10 text-[#DB9558] shadow-[inset_0_0_20px_rgba(219,149,88,0.1)] font-bold' 
                     : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
                 }`}
               >
-                <Icon className="w-4 h-4 shrink-0 transition-colors" />
+                <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-[#DB9558]' : ''}`} />
                 <span className="font-medium text-xs">{item.name}</span>
               </Link>
             )
           })}
         </nav>
 
+        {/* Subtle Divider and Settings Link */}
+        <div className="px-4 py-2 border-t border-gray-800/80">
+          <Link
+            to="/app/settings"
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group ${
+              location.pathname.startsWith('/app/settings')
+                ? 'bg-[#DB9558]/10 text-[#DB9558] shadow-[inset_0_0_20px_rgba(219,149,88,0.15)] font-bold border border-[#DB9558]/30'
+                : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
+            }`}
+          >
+            <SettingsIcon className={`w-4 h-4 shrink-0 transition-colors ${location.pathname.startsWith('/app/settings') ? 'text-[#DB9558]' : ''}`} />
+            <span className="font-medium text-xs">Settings</span>
+          </Link>
+        </div>
+
         <div className="p-4 border-t border-gray-800/50 flex items-center justify-between">
+
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 p-[1.5px]">
               <div className="w-full h-full bg-gray-900 rounded-full flex items-center justify-center text-xs font-bold text-white uppercase">
