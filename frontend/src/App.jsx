@@ -10,6 +10,8 @@ import AssistantView from './components/AssistantView'
 import LandingPage from './components/LandingPage'
 import LoginPage from './components/LoginPage'
 import RegisterPage from './components/RegisterPage'
+import ProjectsView from './components/ProjectsView'
+import UsersManagementView from './components/UsersManagementView'
 import { SearchIcon } from './components/Icons'
 
 function AppLayout({ activeProjectId, setActiveProjectId }) {
@@ -24,6 +26,8 @@ function AppLayout({ activeProjectId, setActiveProjectId }) {
         <div className="p-8 max-w-7xl mx-auto min-h-full">
           <Routes>
             <Route path="/" element={<Dashboard projectId={activeProjectId} />} />
+            <Route path="/projects" element={<ProjectsView onSelectProject={setActiveProjectId} />} />
+            <Route path="/users" element={<UsersManagementView />} />
             <Route path="/documents" element={<DocumentsView projectId={activeProjectId} />} />
             <Route path="/scope" element={<ScopeView projectId={activeProjectId} />} />
             <Route path="/risks" element={<RisksView projectId={activeProjectId} />} />
@@ -64,6 +68,9 @@ function App() {
             />
           } 
         />
+
+        {/* Direct /projects route */}
+        <Route path="/projects" element={<Navigate to="/app/projects" replace />} />
 
         {/* Direct shortcuts */}
         <Route path="/dashboard" element={<Navigate to="/app" replace />} />

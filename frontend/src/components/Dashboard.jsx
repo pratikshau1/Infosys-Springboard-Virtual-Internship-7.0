@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, AreaChart, Area, XAxis, YAxis } from 'recharts'
-import { getHealthScore, getRisks, getBlockers, getScopeItems, getForecast, runAgents } from '../api'
+import { getHealthScore, getRisks, getBlockers, getScopeItems, getForecast, runAgents, getProject } from '../api'
 import { 
   HealthIcon, RiskIcon, BlockerIcon, ScopeIcon, 
   BoltIcon, ReportIcon, UploadIcon, LightbulbIcon, AssistantIcon 
@@ -9,6 +9,7 @@ import UploadModal from './UploadModal'
 import ReportModal from './ReportModal'
 
 const Dashboard = ({ projectId = 1 }) => {
+  const [project, setProject] = useState(null)
   const [health, setHealth] = useState(null)
   const [risks, setRisks] = useState([])
   const [blockers, setBlockers] = useState([])
@@ -22,7 +23,8 @@ const Dashboard = ({ projectId = 1 }) => {
   const loadData = async () => {
     try {
       setLoading(true)
-      const [healthRes, risksRes, blockRes, scopeRes, forecastRes] = await Promise.all([
+      const [projRes, healthRes, risksRes, blockRes, scopeRes, forecastRes] = await Promise.all([
+        getProject(projectId).catch(() => ({ data: null })),
         getHealthScore(projectId),
         getRisks(projectId),
         getBlockers(projectId),
@@ -30,6 +32,7 @@ const Dashboard = ({ projectId = 1 }) => {
         getForecast(projectId).catch(() => ({ data: null }))
       ])
 
+      if (projRes?.data) setProject(projRes.data)
       const healthData = healthRes.data?.[0] || null
       setHealth(healthData)
       setRisks(risksRes.data || [])
@@ -80,10 +83,16 @@ const Dashboard = ({ projectId = 1 }) => {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="text-xs uppercase tracking-wider text-emerald-400 font-bold">Active Project Intelligence</span>
+            <span className="text-xs uppercase tracking-wider text-emerald-400 font-bold">
+              {project?.category || 'Active Project'} &bull; {project?.status || 'Active'}
+            </span>
           </div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-white">Campus Bus Management System</h2>
-          <p className="text-gray-400 text-sm mt-0.5">Real-time GPS dispatch & multi-agent risk assessment</p>
+          <h2 className="text-3xl font-extrabold tracking-tight text-white">
+            {project?.name || 'Smart Campus Management Platform'}
+          </h2>
+          <p className="text-gray-400 text-sm mt-0.5">
+            {project?.description || 'Real-time project intelligence & multi-agent risk assessment'}
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">

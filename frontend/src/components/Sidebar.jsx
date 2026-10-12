@@ -4,15 +4,14 @@ import {
   DashboardIcon, DocumentIcon, ScopeIcon, 
   RiskIcon, BlockerIcon, AssistantIcon, CrossIcon, CheckIcon
 } from './Icons'
-import { getProjects, createProject } from '../api'
+import ProjectModal from './ProjectModal'
 
 const Sidebar = ({ currentProjectId, onSelectProject }) => {
   const location = useLocation()
   const [projects, setProjects] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [newProjectName, setNewProjectName] = useState('')
-  const [newProjectDesc, setNewProjectDesc] = useState('')
-  const [loading, setLoading] = useState(false)
+
+  const [currentUser, setCurrentUser] = useState(null)
 
   const loadProjects = async () => {
     try {
@@ -23,34 +22,29 @@ const Sidebar = ({ currentProjectId, onSelectProject }) => {
     }
   }
 
+  const loadUser = async () => {
+    try {
+      const res = await getCurrentUser()
+      setCurrentUser(res.data)
+    } catch (err) {
+      // Unauthenticated or guest
+    }
+  }
+
   useEffect(() => {
     loadProjects()
+    loadUser()
   }, [])
 
-  const handleCreateProject = async (e) => {
-    e.preventDefault()
-    if (!newProjectName.trim()) return
-
-    setLoading(true)
-    try {
-      const res = await createProject({
-        name: newProjectName.trim(),
-        description: newProjectDesc.trim(),
-        status: 'Active'
-      })
-      await loadProjects()
-      if (onSelectProject) onSelectProject(res.data.id)
-      setIsModalOpen(false)
-      setNewProjectName('')
-      setNewProjectDesc('')
-    } catch (err) {
-      console.error('Error creating project:', err)
-    } finally {
-      setLoading(false)
-    }
+  const handleCreateProject = async (formData) => {
+    const res = await createProject(formData)
+    await loadProjects()
+    if (onSelectProject) onSelectProject(res.data.id)
+    setIsModalOpen(false)
   }
   
   const navItems = [
+    { name: 'Projects', path: '/app/projects', icon: DashboardIcon },
     { name: 'Dashboard', path: '/app', icon: DashboardIcon },
     { name: 'Documents', path: '/app/documents', icon: DocumentIcon },
     { name: 'Scope', path: '/app/scope', icon: ScopeIcon },
@@ -59,12 +53,17 @@ const Sidebar = ({ currentProjectId, onSelectProject }) => {
     { name: 'AI Assistant', path: '/app/assistant', icon: AssistantIcon },
   ]
 
+  // Add Admin item if staff or superuser
+  if (currentUser?.is_staff || currentUser?.is_superuser) {
+    navItems.push({ name: 'Platform Users', path: '/app/users', icon: UsersIcon })
+  }
+
   return (
     <>
       <aside className="w-64 bg-gray-950/80 backdrop-blur-xl border-r border-gray-800 flex flex-col transition-all duration-300 relative z-20">
         <div className="p-6">
           <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
-            AI Project Advisor
+            ProjectIQ
           </h1>
           <p className="text-xs text-gray-500 mt-1 uppercase tracking-wider font-semibold">Intelligence Layer</p>
 
@@ -120,13 +119,17 @@ const Sidebar = ({ currentProjectId, onSelectProject }) => {
         <div className="p-4 border-t border-gray-800/50 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 p-[1.5px]">
-              <div className="w-full h-full bg-gray-900 rounded-full flex items-center justify-center text-xs font-bold text-white">
-                PR
+              <div className="w-full h-full bg-gray-900 rounded-full flex items-center justify-center text-xs font-bold text-white uppercase">
+                {currentUser?.username ? currentUser.username.substring(0, 2) : 'IQ'}
               </div>
             </div>
-            <div>
-              <p className="text-xs font-medium text-white">Pratiksha</p>
-              <p className="text-[10px] text-gray-500">Project Lead</p>
+            <div className="overflow-hidden">
+              <p className="text-xs font-medium text-white truncate">
+                {currentUser?.first_name || currentUser?.username || 'Team Lead'}
+              </p>
+              <p className="text-[10px] text-gray-500 truncate">
+                {currentUser?.is_superuser ? 'Superuser' : currentUser?.is_staff ? 'Administrator' : 'Project Contributor'}
+              </p>
             </div>
           </div>
 
@@ -141,60 +144,13 @@ const Sidebar = ({ currentProjectId, onSelectProject }) => {
       </aside>
 
       {/* New Project Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-gray-900 border border-gray-800 rounded-3xl w-full max-w-md p-6 shadow-2xl relative">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-base font-bold text-white">Create New Project</h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white">
-                <CrossIcon className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateProject} className="space-y-4">
-              <div>
-                <label className="text-xs text-gray-400 block mb-1">Project Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Smart Campus Transit"
-                  value={newProjectName}
-                  onChange={(e) => setNewProjectName(e.target.value)}
-                  className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs text-gray-400 block mb-1">Description</label>
-                <textarea
-                  rows="3"
-                  placeholder="Brief overview of project scope and objectives..."
-                  value={newProjectDesc}
-                  onChange={(e) => setNewProjectDesc(e.target.value)}
-                  className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs text-gray-400 hover:text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading || !newProjectName.trim()}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-md active:scale-95"
-                >
-                  {loading ? 'Creating...' : 'Create Project'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <ProjectModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleCreateProject}
+        title="Create New Project"
+        submitLabel="Create Project"
+      />
     </>
   )
 }
