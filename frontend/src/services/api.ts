@@ -1,7 +1,7 @@
 ﻿import axios from 'axios';
 
-// In development, default to local backend. In production, default to relative /api or custom VITE_API_URL
-const rawApiUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
+// Default to relative /api which Vite proxies in dev and Nginx proxies in prod
+const rawApiUrl = import.meta.env.VITE_API_URL || '/api';
 const API_URL = rawApiUrl.endsWith('/api') ? rawApiUrl : `${rawApiUrl.replace(/\/+$/, '')}/api`;
 
 const api = axios.create({
