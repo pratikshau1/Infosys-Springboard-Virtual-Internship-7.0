@@ -1,20 +1,31 @@
-FROM python:3.11-slim
+﻿FROM python:3.11-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
+# Install system dependencies needed for building packages & PostgreSQL client
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    libpq-dev \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy and install python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-COPY . /app/
+# Copy source code
+COPY . .
 
+# Ensure storage directory exists and start script is executable
+RUN mkdir -p /app/storage && chmod +x /app/start.sh
+
+# Expose default port
 EXPOSE 8000
 
-CMD ["sh", "-c", "python manage.py migrate && python seed_demo.py && python manage.py runserver 0.0.0.0:8000"]
+# Run production startup script
+CMD ["/bin/sh", "/app/start.sh"]

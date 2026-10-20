@@ -1,32 +1,61 @@
-version: '3.8'
+﻿version: '3.8'
 
 services:
+  db:
+    image: ankane/pgvector:latest
+    container_name: project_advisor_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-ai_project_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ai_project_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: project_intel_backend
-    restart: unless-stopped
+    container_name: project_advisor_backend
+    restart: always
     ports:
       - "8000:8000"
     environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      - DEBUG=True
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-ai_project_db}
+      - SECRET_KEY=${SECRET_KEY:-change_this_secret_in_production_key_2026}
+      - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-openai}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-3-small}
+      - EMBEDDING_API_KEY=${EMBEDDING_API_KEY:-}
+      - MAX_UPLOAD_SIZE_MB=${MAX_UPLOAD_SIZE_MB:-10}
+      - CHUNK_SIZE=${CHUNK_SIZE:-1000}
+      - CHUNK_OVERLAP=${CHUNK_OVERLAP:-200}
+      - STORAGE_DIR=/app/storage
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+    depends_on:
+      db:
+        condition: service_healthy
     volumes:
-      - backend_data:/app/chroma_db
-      - backend_media:/app/media
+      - document_storage:/app/storage
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: project_intel_frontend
-    restart: unless-stopped
+    container_name: project_advisor_frontend
+    restart: always
     ports:
-      - "5173:80"
+      - "3000:80"
     depends_on:
       - backend
 
 volumes:
-  backend_data:
-  backend_media:
+  postgres_data:
+  document_storage:

@@ -1,0 +1,5 @@
+Task ID,Task,Owner,Status,Due Date
+T001,Implement authentication,Backend Team,In Progress,2026-10-10
+T002,Design database schema,Data Team,Done,2026-10-05
+T003,Frontend wireframes,Design Team,In Progress,2026-10-12
+T004,Integrate OpenAI API,AI Team,To Do,2026-10-15
