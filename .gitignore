@@ -1,21 +1,49 @@
-# Python / Django
+﻿# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+*.env
+
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-*.sqlite3
-db.sqlite3
-media/
+*.so
+.Python
+env/
 venv/
-.env
-
-# ChromaDB
-chroma_db/
-
-# Node / React
-node_modules/
+ENV/
+build/
+develop-eggs/
 dist/
-dist-ssr/
-*.local
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+
+# Databases & local storage
+*.db
+*.sqlite3
+storage/
+media/
+
+# Node & Frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # IDE & OS
 .vscode/
